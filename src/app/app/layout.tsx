@@ -56,6 +56,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         setCurrentChatRoom,
         addChatRoom,
         logout,
+        deleteOrganization,
     } = useAppStore();
     const chatRooms = useCurrentOrgChatRooms();
     const orgProfiles = useProfilesForOrg(currentOrganization?.id || '');
@@ -470,8 +471,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             <Button
                                 className="w-full bg-red-600 hover:bg-red-700 text-white border-none"
                                 onClick={() => {
-                                    if (confirm('本当にこの団体を削除しますか？')) {
-                                        alert('（デモ）削除しました');
+                                    if (confirm('本当にこの団体を削除しますか？\n（関連するすべてのデータが削除されます）')) {
+                                        deleteOrganization(currentOrganization.id);
                                         exitObserverMode();
                                         router.push('/admin');
                                     }

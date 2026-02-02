@@ -69,7 +69,7 @@ function StatCard({ icon: Icon, label, value, trend, color }: {
 }
 
 export default function SystemAdminPage() {
-    const { organizations, profiles, messages, announcements, enterObserverMode } = useAppStore();
+    const { organizations, profiles, messages, announcements, enterObserverMode, updateProfile } = useAppStore();
     const router = useRouter(); // To redirect on mobile
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +82,8 @@ export default function SystemAdminPage() {
     // User Management State
     const [showUserModal, setShowUserModal] = useState(false);
     const [userSearchQuery, setUserSearchQuery] = useState('');
+    const [editingProfile, setEditingProfile] = useState<any | null>(null); // Type 'any' temporarily to avoid import issues if Profile not imported
+    const [editDisplayName, setEditDisplayName] = useState('');
 
     const [isSending, setIsSending] = useState(false);
     const [showSent, setShowSent] = useState(false);
@@ -428,6 +430,119 @@ export default function SystemAdminPage() {
                     </Card>
                 </div>
             </main>
+
+            {/* User Management Modal */}
+            <AnimatePresence>
+                {showUserModal && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowUserModal(false);
+                                setEditingProfile(null);
+                            }}
+                            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="fixed inset-0 m-auto w-full max-w-2xl h-[80vh] bg-[var(--color-bg-card)] rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col"
+                        >
+                            <div className="p-6 border-b border-[var(--color-bg-tertiary)] flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
+                                    {editingProfile ? 'ユーザー編集' : 'ユーザー管理'}
+                                </h2>
+                                <Button variant="ghost" onClick={() => {
+                                    setShowUserModal(false);
+                                    setEditingProfile(null);
+                                }}>閉じる</Button>
+                            </div>
+
+                            {editingProfile ? (
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-2">
+                                            表示名
+                                        </label>
+                                        <Input
+                                            value={editDisplayName}
+                                            onChange={(e) => setEditDisplayName(e.target.value)}
+                                            placeholder="表示名を入力"
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2 pt-4">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setEditingProfile(null)}
+                                        >
+                                            キャンセル
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                if (editDisplayName.trim()) {
+                                                    updateProfile(editingProfile.id, { display_name: editDisplayName });
+                                                    setEditingProfile(null);
+                                                }
+                                            }}
+                                            disabled={!editDisplayName.trim()}
+                                        >
+                                            保存
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="p-4 border-b border-[var(--color-bg-tertiary)]">
+                                        <div className="relative">
+                                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                                            <input
+                                                type="text"
+                                                placeholder="ユーザーを検索..."
+                                                value={userSearchQuery}
+                                                onChange={(e) => setUserSearchQuery(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--color-bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                                        {filteredUsers.length === 0 ? (
+                                            <p className="text-center text-[var(--color-text-tertiary)] py-8">ユーザーが見つかりません</p>
+                                        ) : (
+                                            filteredUsers.map(user => (
+                                                <div key={user.id} className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-bg-tertiary)]">
+                                                    <InitialAvatar name={user.display_name} />
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-[var(--color-text-primary)]">{user.display_name}</p>
+                                                        <p className="text-xs text-[var(--color-text-tertiary)]">ID: {user.id}</p>
+                                                        <p className="text-xs text-[var(--color-text-muted)]">
+                                                            参加日: {format(new Date(user.joined_at), 'yyyy/MM/dd', { locale: ja })}
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        onClick={() => {
+                                                            setEditingProfile(user);
+                                                            setEditDisplayName(user.display_name);
+                                                        }}
+                                                    >
+                                                        編集
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Success Toast */}
             <AnimatePresence>

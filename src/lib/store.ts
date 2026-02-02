@@ -88,6 +88,7 @@ interface AppState {
     joinOrganization: (inviteCode: string, displayName: string) => Organization | null;
     addReaction: (messageId: string, emoji: string) => boolean;
     removeReaction: (messageId: string, emoji: string) => void;
+    deleteOrganization: (orgId: string) => void;
 }
 
 // ============================================
@@ -472,6 +473,40 @@ export const useAppStore = create<AppState>((set, get) => ({
                     r => !(r.profile_id === state.currentProfile!.id && r.emoji === emoji)
                 )
             } : m)
+        });
+    },
+
+    deleteOrganization: (orgId: string) => {
+        const state = get();
+
+        // 1. Filter out organization
+        const newOrgs = state.organizations.filter(o => o.id !== orgId);
+
+        // 2. Filter out profiles belonging to this org
+        const newProfiles = state.profiles.filter(p => p.org_id !== orgId);
+
+        // 3. Filter out chat rooms belonging to this org
+        const removedRoomIds = state.chatRooms.filter(r => r.org_id === orgId).map(r => r.id);
+        const newChatRooms = state.chatRooms.filter(r => r.org_id !== orgId);
+
+        // 4. Filter out messages belonging to removed rooms
+        const newMessages = state.messages.filter(m => !removedRoomIds.includes(m.room_id));
+
+        // 5. Check if current organization is the one being deleted
+        const newCurrentOrg = state.currentOrganization?.id === orgId ? null : state.currentOrganization;
+        const newCurrentChat = removedRoomIds.includes(state.currentChatRoom?.id || '') ? null : state.currentChatRoom;
+
+        // 6. Check if current profile is being deleted
+        const newCurrentProfile = state.currentProfile?.org_id === orgId ? null : state.currentProfile;
+
+        set({
+            organizations: newOrgs,
+            profiles: newProfiles,
+            chatRooms: newChatRooms,
+            messages: newMessages,
+            currentOrganization: newCurrentOrg,
+            currentChatRoom: newCurrentChat,
+            currentProfile: newCurrentProfile,
         });
     },
 }));

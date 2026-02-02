@@ -63,6 +63,7 @@ export default function ChatPage({ params }: PageProps) {
     const markMessageAsRead = useAppStore((s) => s.markMessageAsRead);
     const typingUsers = useAppStore((s) => s.typingUsers);
     const setTyping = useAppStore((s) => s.setTyping);
+    const isObserverMode = useAppStore((s) => s.isObserverMode);
 
     const messages = useCurrentChatMessages();
     const orgProfiles = useProfilesForOrg(currentOrganization?.id || '');
@@ -331,8 +332,14 @@ export default function ChatPage({ params }: PageProps) {
                         multiple
                         onChange={handleFileSelect}
                         className="hidden"
+                        disabled={isObserverMode}
                     />
-                    <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isObserverMode}
+                    >
                         <Paperclip size={18} />
                     </Button>
                     <input
@@ -340,18 +347,20 @@ export default function ChatPage({ params }: PageProps) {
                         value={newMessage}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                        placeholder="メッセージを入力..."
+                        placeholder={isObserverMode ? "閲覧モードのため入力できません" : "メッセージを入力..."}
+                        disabled={isObserverMode}
                         className="
                             flex-1 px-4 py-3 rounded-xl
                             bg-[var(--color-bg-secondary)]
                             text-[var(--color-text-primary)]
                             placeholder:text-[var(--color-text-muted)]
                             focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-light)]
+                            disabled:opacity-50 disabled:cursor-not-allowed
                         "
                     />
                     <Button
                         onClick={handleSend}
-                        disabled={(!newMessage.trim() && attachedFiles.length === 0) || !!sendingMessage}
+                        disabled={(!newMessage.trim() && attachedFiles.length === 0) || !!sendingMessage || isObserverMode}
                         isLoading={!!sendingMessage}
                     >
                         <Send size={18} />

@@ -71,7 +71,7 @@ function FileAttachmentItem({ file }: { file: FileAttachment }) {
 }
 
 export function MessageItem({ message, isOwn, showReadReceipts, animationDelay = 0 }: MessageItemProps) {
-    const { addReaction, removeReaction, currentProfile } = useAppStore();
+    const { addReaction, removeReaction, currentProfile, isObserverMode } = useAppStore();
     const [showPicker, setShowPicker] = useState(false);
 
     const sender = mockProfiles.find((p) => p.id === message.sender_id);
@@ -92,6 +92,11 @@ export function MessageItem({ message, isOwn, showReadReceipts, animationDelay =
     };
 
     const handleReaction = (emoji: string) => {
+        if (isObserverMode && !hasReacted(emoji)) return; // Prevent adding in observer mode
+        if (isObserverMode && hasReacted(emoji)) return; // Prevent removing in observer mode 
+        // Actually simpler: just disable all reaction interactions
+        if (isObserverMode) return;
+
         if (hasReacted(emoji)) {
             removeReaction(message.id, emoji);
         } else {
@@ -128,36 +133,38 @@ export function MessageItem({ message, isOwn, showReadReceipts, animationDelay =
                 {/* Message Bubble Container */}
                 <div className="relative">
                     {/* Picker Trigger (Hover) */}
-                    <div className={`
-                        absolute top-0 bottom-0 flex items-center 
-                        ${isOwn ? 'right-full mr-2' : 'left-full ml-2'}
-                        opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                     `}>
-                        <button
-                            onClick={() => setShowPicker(!showPicker)}
-                            className="
-                                p-1.5 rounded-full
-                                text-[var(--color-text-tertiary)]
-                                hover:bg-[var(--color-bg-tertiary)]
-                                hover:text-[var(--color-text-secondary)]
-                                transition-colors
-                            "
-                        >
-                            <Smile size={18} />
-                        </button>
+                    {!isObserverMode && (
+                        <div className={`
+                            absolute top-0 bottom-0 flex items-center 
+                            ${isOwn ? 'right-full mr-2' : 'left-full ml-2'}
+                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                        `}>
+                            <button
+                                onClick={() => setShowPicker(!showPicker)}
+                                className="
+                                    p-1.5 rounded-full
+                                    text-[var(--color-text-tertiary)]
+                                    hover:bg-[var(--color-bg-tertiary)]
+                                    hover:text-[var(--color-text-secondary)]
+                                    transition-colors
+                                "
+                            >
+                                <Smile size={18} />
+                            </button>
 
-                        {/* Picker */}
-                        <AnimatePresence>
-                            {showPicker && (
-                                <div className="absolute bottom-full mb-2 z-50">
-                                    <EmojiPicker
-                                        onSelect={handleReaction}
-                                        onClose={() => setShowPicker(false)}
-                                    />
-                                </div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                            {/* Picker */}
+                            <AnimatePresence>
+                                {showPicker && (
+                                    <div className="absolute bottom-full mb-2 z-50">
+                                        <EmojiPicker
+                                            onSelect={handleReaction}
+                                            onClose={() => setShowPicker(false)}
+                                        />
+                                    </div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
 
                     {/* Message Bubble */}
                     <div

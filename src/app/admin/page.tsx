@@ -98,6 +98,12 @@ export default function SystemAdminPage() {
         p.display_name.toLowerCase().includes(userSearchQuery.toLowerCase())
     );
 
+    // Calculate stats
+    const totalOrganizations = organizations.length;
+    const totalUsers = profiles.length;
+    const totalMessages = messages.length;
+    const unreadAnnouncements = announcements.filter(a => !a.is_read).length;
+
     useEffect(() => {
         const checkMobile = () => {
             if (window.innerWidth < 768) {

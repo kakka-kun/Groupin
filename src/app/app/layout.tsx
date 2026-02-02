@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Moon, Sun, LogOut, Hash, Settings, Plus, Users, Menu, X, Shield } from 'lucide-react';
+import { Home, Moon, Sun, LogOut, Hash, Settings, Plus, Users, Menu, X, Shield, AlertTriangle } from 'lucide-react';
 import { useAppStore, useCurrentOrgChatRooms, useProfilesForOrg } from '@/lib/store';
 import { AnnouncementInbox } from '@/components/admin';
 import { Button, Input } from '@/components/ui';
@@ -44,6 +44,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         isAuthenticated,
         currentUserId,
         isSystemAdmin,
+        isObserverMode,
+        exitObserverMode,
         currentOrganization,
         currentProfile,
         isDarkMode,
@@ -117,7 +119,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const showSidebarContent = currentOrganization && pathname !== '/app';
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg-primary)] flex">
+        <div className="flex h-screen bg-[var(--color-bg-primary)] overflow-hidden">
+            {/* Observer Mode Banner */}
+            {isObserverMode && (
+                <div className="fixed top-0 left-0 right-0 h-10 bg-amber-500 text-white z-50 flex items-center justify-between px-6 shadow-md">
+                    <div className="flex items-center gap-2 text-sm font-bold">
+                        <Shield size={16} />
+                        管理者閲覧モード（操作無効）
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white hover:bg-white/20 h-7 text-xs"
+                        onClick={() => {
+                            exitObserverMode();
+                            router.push('/admin');
+                        }}
+                    >
+                        モード終了
+                    </Button>
+                </div>
+            )}
+
             {/* Mobile Backdrop */}
             <AnimatePresence>
                 {showSidebarContent && isSidebarOpen && (
@@ -411,6 +434,55 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     {children}
                 </main>
             </div>
+
+            {/* Admin Info Panel (Right Side) */}
+            {isObserverMode && currentOrganization && (
+                <div className="w-80 border-l border-[var(--color-bg-tertiary)] bg-[var(--color-bg-secondary)] p-6 pt-16 flex flex-col gap-6 overflow-y-auto hidden xl:flex">
+                    <div>
+                        <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-4">
+                            団体情報 (管理者用)
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-bg-tertiary)]">
+                                <p className="text-xs text-[var(--color-text-tertiary)] mb-1">団体名</p>
+                                <p className="font-bold text-[var(--color-text-primary)]">{currentOrganization.name}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-bg-tertiary)]">
+                                <p className="text-xs text-[var(--color-text-tertiary)] mb-1">ID</p>
+                                <p className="font-mono text-xs text-[var(--color-text-primary)] break-all">{currentOrganization.id}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-bg-tertiary)]">
+                                <p className="text-xs text-[var(--color-text-tertiary)] mb-1">Slug</p>
+                                <p className="font-mono text-sm text-[var(--color-text-primary)]">{currentOrganization.slug}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-auto">
+                        <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                            <h4 className="flex items-center gap-2 font-bold text-red-700 mb-2">
+                                <AlertTriangle size={16} />
+                                危険な操作
+                            </h4>
+                            <p className="text-xs text-red-600 mb-4">
+                                この団体と関連データを完全に削除します。この操作は取り消せません。
+                            </p>
+                            <Button
+                                className="w-full bg-red-600 hover:bg-red-700 text-white border-none"
+                                onClick={() => {
+                                    if (confirm('本当にこの団体を削除しますか？')) {
+                                        alert('（デモ）削除しました');
+                                        exitObserverMode();
+                                        router.push('/admin');
+                                    }
+                                }}
+                            >
+                                団体を削除
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

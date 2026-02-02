@@ -43,7 +43,7 @@
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/groupin.git
+git clone https://github.com/kakka-kun/Groupin.git
 cd groupin
 
 # 依存関係をインストール

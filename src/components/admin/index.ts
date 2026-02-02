@@ -1,0 +1,1 @@
+export { AnnouncementInbox } from './AnnouncementInbox';
